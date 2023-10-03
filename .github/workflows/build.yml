@@ -1,112 +1,27 @@
-name: Build
+on: [push]
 
-on: [push, pull_request, workflow_dispatch]
-
-env:
-  CARGO_TERM_COLOR: always
-  MIN_SUPPORTED_RUST_VERSION: "1.72.0"
-  CICD_INTERMEDIATES_DIR: "_cicd-intermediates"
+name: CI
 
 jobs:
-  release:
-    name: ${{ matrix.job.os }} (${{ matrix.job.target }})
-    runs-on: ${{ matrix.job.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        job:
-          - { os: ubuntu-20.04 , target: x86_64-unknown-linux-gnu    }
-          - { os: ubuntu-20.04 , target: x86_64-unknown-linux-musl   , use-cross: true }
-          - { os: macos-12  , target: x86_64-apple-darwin         }
-          # - { os: windows-2019 , target: i686-pc-windows-gnu         }  ## disabled; error: linker `i686-w64-mingw32-gcc` not found
-#          - { os: windows-2019 , target: i686-pc-windows-msvc        }
-#          - { os: windows-2019 , target: x86_64-pc-windows-gnu       }
-          - { os: windows-2019 , target: x86_64-pc-windows-msvc      }
-
+  build_and_test:
+    name: Rust project
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout source code
-      uses: actions/checkout@v2
-    - name: Install prerequisites
-      shell: bash
-      run: |
-        case ${{ matrix.job.target }} in
-          arm-unknown-linux-gnueabihf) sudo apt-get -y update ; sudo apt-get -y install gcc-arm-linux-gnueabihf ;;
-          aarch64-unknown-linux-gnu) sudo apt-get -y update ; sudo apt-get -y install gcc-aarch64-linux-gnu ;;
-        esac
-    - name: Extract crate information
-      shell: bash
-      run: |
-        echo "PROJECT_NAME=rdiag" >> $GITHUB_ENV
-        echo "PROJECT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> $GITHUB_ENV
-        echo "PROJECT_MAINTAINER=$(sed -n 's/^authors = \["\(.*\)"\]/\1/p' Cargo.toml)" >> $GITHUB_ENV
-        echo "PROJECT_HOMEPAGE=$(sed -n 's/^homepage = "\(.*\)"/\1/p' Cargo.toml)" >> $GITHUB_ENV
-    - name: Install Rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: ${{ matrix.job.target }}
-        override: true
-        profile: minimal  # minimal component installation (ie, no documentation)
-    - name: Show version information (Rust, cargo, GCC)
-      shell: bash
-      run: |
-        gcc --version || true
-        rustup -V
-        rustup toolchain list
-        rustup default
-        cargo -V
-        rustc -V
-    - name: Build
-      uses: actions-rs/cargo@v1
-      with:
-        use-cross: ${{ matrix.job.use-cross }}
-        command: test
-        args: --target=${{ matrix.job.target }} ${{ steps.test-options.outputs.CARGO_TEST_OPTIONS}}
-
-    - name: Create tarball
-      id: package
-      shell: bash
-      run: |
-        PKG_suffix=".tar.gz" ; case ${{ matrix.job.target }} in *-pc-windows-*) PKG_suffix=".zip" ;; esac;
-        PKG_BASENAME=${PROJECT_NAME}-v${PROJECT_VERSION}-${{ matrix.job.target }}
-        PKG_NAME=${PKG_BASENAME}${PKG_suffix}
-        echo "name=PKG_NAME::${PKG_NAME}" >> $GITHUB_OUTPUT
-        PKG_STAGING="${{ env.CICD_INTERMEDIATES_DIR }}/package"
-        ARCHIVE_DIR="${PKG_STAGING}/${PKG_BASENAME}/"
-        mkdir -p "${ARCHIVE_DIR}"
-        mkdir -p "${ARCHIVE_DIR}/autocomplete"
-        # Binary
-        cp "${{ steps.strip.outputs.BIN_PATH }}" "$ARCHIVE_DIR"
-        # README, LICENSE and CHANGELOG files
-        cp "README.md" "LICENSE.md" "$ARCHIVE_DIR"
-        # base compressed package
-        pushd "${PKG_STAGING}/" >/dev/null
-        case ${{ matrix.job.target }} in
-          *-pc-windows-*) 7z -y a "${PKG_NAME}" "${PKG_BASENAME}"/* | tail -2 ;;
-          *) tar czf "${PKG_NAME}" "${PKG_BASENAME}"/* ;;
-        esac;
-        popd >/dev/null
-        # Let subsequent steps know where to find the compressed package
-        echo "name=PKG_PATH::${PKG_STAGING}/${PKG_NAME}" >> $GITHUB_OUTPUT
-
-    - name: "Artifact upload: tarball"
-      uses: actions/upload-artifact@master
-      with:
-        name: ${{ steps.package.outputs.PKG_NAME }}
-        path: ${{ steps.package.outputs.PKG_PATH }}
-
-    - name: Check for release
-      id: is-release
-      shell: bash
-      run: |
-        unset IS_RELEASE ; if [[ $GITHUB_REF =~ ^refs/tags/v[0-9].* ]]; then IS_RELEASE='true' ; fi
-        echo "name=IS_RELEASE::${IS_RELEASE}" >> $GITHUB_OUTPUT
-    - name: Publish archives and packages
-      uses: softprops/action-gh-release@v1
-      if: steps.is-release.outputs.IS_RELEASE
-      with:
-        files: |
-          ${{ steps.package.outputs.PKG_PATH }}
-          ${{ steps.debian-package.outputs.DPKG_PATH }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --all-features
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target x86_64-unknown-linux-musl
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          command: build
+          args: --target x86_64-pc-windows-msvc
