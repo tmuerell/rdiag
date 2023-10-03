@@ -56,6 +56,6 @@ jobs:
         with:
           name: rdiag-windows
           path: |
-            target/release/rdiag.exe
+            target/release/rdiag
           if-no-files-found: error
           retention-days: 1
