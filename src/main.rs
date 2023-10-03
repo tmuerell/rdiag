@@ -31,7 +31,7 @@ fn main() -> Result<()> {
                     let timeout = Duration::from_secs(1);
                     let options = ping_rs::PingOptions {
                         ttl: 128,
-                        dont_fragment: true,
+                        dont_fragment: false,
                     };
                     let result = ping_rs::send_ping(&addr, timeout, &data, Some(&options));
                     match result {
