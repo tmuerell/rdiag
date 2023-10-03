@@ -88,6 +88,9 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             cross: false
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            cross: false
 
     steps:
       - name: Checkout
