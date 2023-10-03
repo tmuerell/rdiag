@@ -16,6 +16,14 @@ jobs:
         with:
           command: build
           args: --release --all-features
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: rdiag-amd64
+          path: |
+            target/release/rdiag
+          if-no-files-found: error
+          retention-days: 1
       - id: build-musl
         uses: actions-rs/cargo@v1
         with:
@@ -25,7 +33,7 @@ jobs:
       - name: Upload release artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: build-normal
+          name: rdiag-musl
           path: |
             target/release/rdiag
           if-no-files-found: error
@@ -43,3 +51,11 @@ jobs:
         with:
           command: build
           args: --target x86_64-pc-windows-msvc
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: rdiag-windows
+          path: |
+            target/release/rdiag.exe
+          if-no-files-found: error
+          retention-days: 1
