@@ -6,9 +6,6 @@ jobs:
   build_and_test:
     name: Rust project
     runs-on: ubuntu-latest
-    outputs:
-      output1: ${{ steps.build-normal.outputs }}
-      output2: ${{ steps.build-musl.outputs }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -25,6 +22,15 @@ jobs:
           use-cross: true
           command: build
           args: --target x86_64-unknown-linux-musl
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-normal
+          path: |
+            target/release/rdiag
+          if-no-files-found: error
+          retention-days: 1
+
   build_windows:
     name: Windows build
     runs-on: windows-2019
