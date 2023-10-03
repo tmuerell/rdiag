@@ -10,3 +10,5 @@ clap = { version = "4.4.6", features = ["derive", "env"] }
 color-eyre = "0.6.2"
 colored = "2.0.4"
 ping-rs = "0.1.2"
+arp-toolkit = { version = "0.3.1", features = ["sync"] }
+ipnet = "2.7.2"
