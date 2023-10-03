@@ -23,9 +23,6 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  get-next-version:
-    uses: semantic-release-action/next-release-version/.github/workflows/next-release-version.yml@v4
-
   test:
     name: Cargo test
     runs-on: ubuntu-latest
@@ -59,10 +56,7 @@ jobs:
   # Compile native CLI binary
   build-cli:
     name: Build CLI ${{ matrix.build.target }}
-    if: needs.get-next-version.outputs.new-release-published == 'true'
     runs-on: ${{ matrix.build.os }}
-    needs:
-      - get-next-version
     env:
       CARGO: cargo
 
@@ -127,9 +121,6 @@ jobs:
         with:
           tool: semantic-release-cargo@2
 
-      - name: Prepare semantic-release for Rust
-        run: semantic-release-cargo prepare ${{ needs.get-next-version.outputs.new-release-version }}
-
       - name: Install cross
         uses: taiki-e/install-action@v2
         with:
@@ -164,10 +155,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     name: Release
-    if: needs.get-next-version.outputs.new-release-published == 'true'
     needs:
       - build-cli
-      - get-next-version
       - test
 
     steps:
