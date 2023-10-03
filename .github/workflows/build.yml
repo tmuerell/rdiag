@@ -15,13 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         job:
-#          - { os: ubuntu-18.04 , target: arm-unknown-linux-gnueabihf , use-cross: true }
-#          - { os: ubuntu-18.04 , target: aarch64-unknown-linux-gnu   , use-cross: true }
-#          - { os: ubuntu-18.04 , target: i686-unknown-linux-gnu      , use-cross: true }
-#          - { os: ubuntu-18.04 , target: i686-unknown-linux-musl     , use-cross: true }
           - { os: ubuntu-20.04 , target: x86_64-unknown-linux-gnu    }
-#          - { os: ubuntu-18.04 , target: x86_64-unknown-linux-musl   , use-cross: true }
-          - { os: macos-10.15  , target: x86_64-apple-darwin         }
+          - { os: ubuntu-20.04 , target: x86_64-unknown-linux-musl   , use-cross: true }
+          - { os: macos-12  , target: x86_64-apple-darwin         }
           # - { os: windows-2019 , target: i686-pc-windows-gnu         }  ## disabled; error: linker `i686-w64-mingw32-gcc` not found
 #          - { os: windows-2019 , target: i686-pc-windows-msvc        }
 #          - { os: windows-2019 , target: x86_64-pc-windows-gnu       }
@@ -91,7 +87,7 @@ jobs:
         esac;
         popd >/dev/null
         # Let subsequent steps know where to find the compressed package
-        echo ::set-output name=PKG_PATH::"${PKG_STAGING}/${PKG_NAME}"
+        echo "name=PKG_PATH::${PKG_STAGING}/${PKG_NAME}" >> $GITHUB_OUTPUT
 
     - name: "Artifact upload: tarball"
       uses: actions/upload-artifact@master
@@ -104,7 +100,7 @@ jobs:
       shell: bash
       run: |
         unset IS_RELEASE ; if [[ $GITHUB_REF =~ ^refs/tags/v[0-9].* ]]; then IS_RELEASE='true' ; fi
-        echo ::set-output name=IS_RELEASE::${IS_RELEASE}
+        echo "name=IS_RELEASE::${IS_RELEASE}" >> $GITHUB_OUTPUT
     - name: Publish archives and packages
       uses: softprops/action-gh-release@v1
       if: steps.is-release.outputs.IS_RELEASE
