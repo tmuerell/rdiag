@@ -6,16 +6,21 @@ jobs:
   build_and_test:
     name: Rust project
     runs-on: ubuntu-latest
+    outputs:
+      output1: ${{ steps.build-normal.outputs }}
+      output2: ${{ steps.build-musl.outputs }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - uses: actions-rs/cargo@v1
+      - id: build-normal
+        uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release --all-features
-      - uses: actions-rs/cargo@v1
+      - id: build-musl
+        uses: actions-rs/cargo@v1
         with:
           use-cross: true
           command: build
