@@ -91,6 +91,7 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             cross: false
+            suffix: ".exe"
 
     steps:
       - name: Checkout
@@ -139,7 +140,7 @@ jobs:
       - name: Create release archive
         run: |
           mkdir dist
-          cp target/${{ matrix.build.target }}/release/rdiag dist/rdiag-${{ matrix.build.target }}
+          cp target/${{ matrix.build.target }}/release/rdiag${{ matrix.build.suffix }} dist/rdiag-${{ matrix.build.target }}
 
       - name: Create binary checksum
         run: shasum --algorithm 256 --binary rdiag-${{ matrix.build.target }} | tee rdiag-${{ matrix.build.target }}-SHA256SUM.txt

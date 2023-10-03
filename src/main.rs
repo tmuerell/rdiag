@@ -15,13 +15,21 @@ pub struct Opts {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum Command {
+    /// Run a ping against multiple systems in a nice graphical way
     Ping {
+        /// The addresses to ping
         addresses: Vec<IpAddr>,
+
+        /// Limit the amount of iterations that are done
         #[arg(long, default_value = "1000")]
         limit: u64,
     },
+    /// Collect arp requests
     Arp {
+        /// The network to get the arp requests for
         net: Ipv4Net,
+
+        /// How many iterations are being done
         #[arg(default_value = "2")]
         iterations: u32,
     },
